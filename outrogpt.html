@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aventura Siluriana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #001F3F;
+            color: white;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(0, 116, 217, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(255, 220, 0, 0.15) 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+        
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .btn {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .draggable {
+            cursor: grab;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .draggable:active {
+            cursor: grabbing;
+            transform: scale(1.05);
+        }
+        
+        .draggable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .dropzone {
+            transition: all 0.3s ease;
+            min-height: 100px;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            /* Adaptado para mobile: limitar altura e permitir rolagem */
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .dropzone.highlight {
+            background-color: rgba(255, 220, 0, 0.2);
+            transform: scale(1.02);
+            border: 2px dashed rgba(255, 220, 0, 0.6);
+            box-shadow: 0 0 15px rgba(255, 220, 0, 0.3);
+        }
+        
+        .explanation-text {
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-top: 5px;
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .explanation-text.show {
+            opacity: 1;
+            height: auto;
+            margin-top: 8px;
+        }
+        
+        /* Enhanced homepage styles */
+        .hero-section {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, #001F3F 0%, #0074D9 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+        
+        .siluriano-icon {
+            display: inline-block;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        
+        .feature-card {
+            background: rgba(0, 116, 217, 0.2);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            background: rgba(0, 116, 217, 0.3);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #FFDC00;
+        }
+        
+        /* Timeline for Siluriano period */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            background-color: #FFDC00;
+            transform: translateX(-50%);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .timeline-content {
+            position: relative;
+            width: 45%;
+            padding: 15px;
+            background-color: rgba(0, 116, 217, 0.2);
+            border-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .timeline-content:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .timeline-item:nth-child(odd) .timeline-content {
+            margin-left: auto;
+        }
+        
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            width: 20px;
+            height: 20px;
+            background-color: #FFDC00;
+            border-radius: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+        
+        .timeline-date {
+            color: #FFDC00;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        /* Quiz styles */
+        .quiz-option {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .quiz-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            background-color: rgba(0, 116, 217, 0.3);
+        }
+        
+        .quiz-option.selected,
+        .quiz-option.disabled {
+            pointer-events: none;
+        }
+        
+        .quiz-option.correct {
+            border-color: #FFDC00;
+            background-color: rgba(255, 220, 0, 0.2);
+        }
+        
+        .quiz-option.incorrect {
+            border-color: #F44336;
+            background-color: rgba(244, 67, 54, 0.2);
+        }
+        
+        .quiz-explanation {
+            background-color: rgba(0, 31, 63, 0.7);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 4px solid;
+            display: none;
+        }
+        
+        .quiz-explanation.correct {
+            border-color: #4CAF50;
+        }
+        
+        .quiz-explanation.incorrect {
+            border-color: #F44336;
+        }
+        
+        /* Holographic ticket styles */
+        .holographic-ticket {
+            position: relative;
+            background: linear-gradient(135deg, #001F3F 0%, #0074D9 100%);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.3),
+                inset 0 0 10px rgba(255, 255, 255, 0.2);
+            overflow: hidden;
+            transform: perspective(1000px);
+            transition: all 0.5s ease;
+        }
+        
+        .holographic-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                125deg, 
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.1) 10%, 
+                rgba(255,255,255,0.2) 20%, 
+                rgba(255,255,255,0) 30%
+            );
+            background-size: 300% 300%;
+            mix-blend-mode: overlay;
+            pointer-events: none;
+            animation: holographic-shift 5s ease infinite;
+        }
+        
+        @keyframes holographic-shift {
+            0% {
+                background-position: 0% 0%;
+            }
+            50% {
+                background-position: 100% 100%;
+            }
+            100% {
+                background-position: 0% 0%;
+            }
+        }
+        
+        .ticket-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .ticket-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .ticket-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 220, 0, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #FFDC00;
+            border: 2px solid rgba(255, 220, 0, 0.5);
+            box-shadow: 0 0 15px rgba(255, 220, 0, 0.3);
+        }
+        
+        /* Swipe to unlock */
+        .swipe-container {
+            position: relative;
+            height: 60px;
+            background: rgba(0, 31, 63, 0.5);
+            border-radius: 30px;
+            margin: 20px 0;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .swipe-button {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 50px;
+            height: 50px;
+            background: #FFDC00;
+            border-radius: 25px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #001F3F;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(255, 220, 0, 0.5);
+            z-index: 2;
+            user-select: none;
+            touch-action: none;
+        }
+        
+        .swipe-button:active {
+            cursor: grabbing;
+        }
+        
+        .swipe-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: bold;
+            letter-spacing: 1px;
+            user-select: none;
+        }
+        
+        .swipe-complete {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            padding-top: 5px;
+            background: rgba(76, 175, 80, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #4CAF50;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .swipe-complete.active {
+            opacity: 1;
+        }
+        
+        /* Environment selection styles */
+        .environment-option {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .environment-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .environment-option.selected {
+            border: 2px solid #64B5F6;
+            box-shadow: 0 0 15px rgba(100, 181, 246, 0.5);
+            background-color: rgba(100, 181, 246, 0.2);
+        }
+        
+        .environment-option.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            background-color: #64B5F6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+        }
+        
+        /* Vale Brigadeiro styles */
+        .brigadeiro-section {
+            background: linear-gradient(135deg, #4A2C2A 0%, #7B5D5A 100%);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 2px dashed #FFDC00;
+            position: relative;
+        }
+        
+        .brigadeiro-section::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 20px;
+            background-color: #FFDC00;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+            line-height: 20px;
+            color: #4A2C2A;
+        }
+        
+        .brigadeiro-icon {
+            font-size: 2rem;
+            margin-right: 10px;
+        }
+        
+        .brigadeiro-status {
+            font-weight: bold;
+            color: #FFDC00;
+            margin-top: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        
+        .brigadeiro-status.redeemed {
+            color: #4CAF50;
+            background-color: rgba(76, 175, 80, 0.2);
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .timeline::before {
+                left: 20px;
+            }
+            
+            .timeline-item::after {
+                left: 20px;
+                transform: none;
+            }
+            
+            .timeline-content {
+                width: calc(100% - 50px);
+                margin-left: 50px !important;
+            }
+            
+            .feature-card {
+                margin-bottom: 1rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .draggable {
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header class="text-center py-6">
+            <h1 class="text-4xl font-bold mb-2 text-yellow-300">Aventura Siluriana</h1>
+            <p class="text-xl">Descubra os segredos do Período Siluriano neste jogo interativo!</p>
+        </header>
+        
+        <div id="intro-screen">
+            <div class="hero-section p-8 mb-8">
+                <div class="hero-bg"></div>
+                <div class="relative z-10">
+                    <h2 class="text-3xl font-bold mb-4 text-yellow-300">Bem-vindo à Aventura Siluriana!</h2>
+                    <p class="mb-6 text-lg">Embarque em uma jornada fascinante pelo Período Siluriano, uma época crucial na história da Terra que ocorreu há aproximadamente 443 a 419 milhões de anos atrás.</p>
+                    
+                    <div class="flex flex-col md:flex-row gap-6 mb-8">
+                        <div class="feature-card flex-1">
+                            <div class="feature-icon">🌊</div>
+                            <h3 class="text-xl font-bold mb-2 text-yellow-300">Vida Marinha</h3>
+                            <p>Os oceanos do Siluriano eram dominados por trilobitas, eurypterids (escorpiões marinhos) e os primeiros peixes com mandíbula.</p>
+                        </div>
+                        
+                        <div class="feature-card flex-1">
+                            <div class="feature-icon">🌱</div>
+                            <h3 class="text-xl font-bold mb-2 text-yellow-300">Colonização Terrestre</h3>
+                            <p>As primeiras plantas começaram a colonizar a terra, iniciando uma revolução que mudaria para sempre a face do planeta.</p>
+                        </div>
+                        
+                        <div class="feature-card flex-1">
+                            <div class="feature-icon">🦂</div>
+                            <h3 class="text-xl font-bold mb-2 text-yellow-300">Artrópodes Pioneiros</h3>
+                            <p>Os primeiros artrópodes terrestres surgiram, marcando o início da colonização animal dos continentes.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline mb-8">
+                        <div class="timeline-item">
+                            <div class="timeline-content">
+                                <div class="timeline-date">443 milhões de anos atrás</div>
+                                <p>Início do Período Siluriano após a extinção em massa do Ordoviciano-Siluriano</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-content">
+                                <div class="timeline-date">430 milhões de anos atrás</div>
+                                <p>Surgimento dos primeiros peixes com mandíbula, uma evolução crucial para os vertebrados</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-content">
+                                <div class="timeline-date">425 milhões de anos atrás</div>
+                                <p>As primeiras plantas vasculares começam a colonizar os ambientes terrestres</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-content">
+                                <div class="timeline-date">419 milhões de anos atrás</div>
+                                <p>Fim do Período Siluriano e início do Período Devoniano</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button id="start-adventure" class="inline-block bg-yellow-400 text-blue-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-300 transition-all transform hover:-translate-y-1 hover:shadow-lg">
+                            Iniciar Aventura!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="challenge-1" style="display: none;">
+            <h2 class="text-3xl font-bold mb-6 text-center text-yellow-300">Desafio 1: Quiz Siluriano</h2>
+            <p class="mb-6 text-lg text-center">Teste seus conhecimentos sobre o Período Siluriano!</p>
+            
+            <div class="mb-8">
+                <div id="question-1" class="quiz-question mb-6">
+                    <h3 class="text-xl font-bold mb-3">1. Quando ocorreu o Período Siluriano?</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="false" data-explanation="Incorreto. Este período corresponde ao Triássico, muito depois do Siluriano.">
+                            <p>250 a 200 milhões de anos atrás</p>
+                        </div>
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="true" data-explanation="Correto! O Período Siluriano ocorreu entre 443 e 419 milhões de anos atrás, sendo uma época importante para o desenvolvimento da vida na Terra.">
+                            <p>443 a 419 milhões de anos atrás</p>
+                        </div>
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="false" data-explanation="Incorreto. Este período corresponde ao Paleogeno, muito depois do Siluriano.">
+                            <p>66 a 23 milhões de anos atrás</p>
+                        </div>
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="false" data-explanation="Incorreto. Este intervalo é muito amplo e corresponde ao Proterozoico, muito antes do Siluriano.">
+                            <p>2,5 bilhões a 540 milhões de anos atrás</p>
+                        </div>
+                    </div>
+                    <div class="quiz-explanation"></div>
+                    <div class="mt-4 text-center">
+                        <button class="next-question bg-yellow-400 text-blue-900 font-bold py-2 px-6 rounded-lg hidden">
+                            Próxima Pergunta
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="question-2" class="quiz-question mb-6" style="display: none;">
+                    <h3 class="text-xl font-bold mb-3">2. Qual importante evento evolutivo ocorreu durante o Siluriano?</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="false" data-explanation="Incorreto. Os dinossauros surgiram muito depois, no Período Triássico (cerca de 230 milhões de anos atrás).">
+                            <p>Surgimento dos dinossauros</p>
+                        </div>
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="false" data-explanation="Incorreto. Os trilobitas não se extinguiram no Siluriano; eles continuaram a existir até o final do Permiano.">
+                            <p>Extinção dos trilobitas</p>
+                        </div>
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="true" data-explanation="Correto! As primeiras plantas terrestres simples começaram a colonizar os ambientes terrestres durante o Siluriano, um marco crucial na evolução da vida na Terra.">
+                            <p>Primeiras plantas terrestres</p>
+                        </div>
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="false" data-explanation="Incorreto. Os mamíferos surgiram muito depois, no final do Período Triássico (cerca de 210 milhões de anos atrás).">
+                            <p>Surgimento dos mamíferos</p>
+                        </div>
+                    </div>
+                    <div class="quiz-explanation"></div>
+                    <div class="mt-4 text-center">
+                        <button class="next-question bg-yellow-400 text-blue-900 font-bold py-2 px-6 rounded-lg hidden">
+                            Próxima Pergunta
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="question-3" class="quiz-question mb-6" style="display: none;">
+                    <h3 class="text-xl font-bold mb-3">3. Quais criaturas dominavam os mares do Siluriano?</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="false" data-explanation="Incorreto. Os dinossauros marinhos (como os plesiossauros e ictiossauros) surgiram muito depois, durante o Mesozoico.">
+                            <p>Dinossauros marinhos</p>
+                        </div>
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="false" data-explanation="Incorreto. Baleias e golfinhos são mamíferos marinhos que surgiram muito depois, durante o Cenozoico.">
+                            <p>Baleias e golfinhos</p>
+                        </div>
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="false" data-explanation="Incorreto. Os tubarões modernos evoluíram muito depois do Siluriano.">
+                            <p>Tubarões modernos</p>
+                        </div>
+                        <div class="quiz-option bg-blue-800 p-4 rounded-lg" data-correct="true" data-explanation="Correto! Os eurypterids (escorpiões marinhos) e trilobitas eram criaturas dominantes nos mares do Siluriano, com alguns eurypterids chegando a mais de 2 metros de comprimento.">
+                            <p>Eurypterids e trilobitas</p>
+                        </div>
+                    </div>
+                    <div class="quiz-explanation"></div>
+                    <div class="mt-4 text-center">
+                        <button id="next-to-challenge-2" class="bg-yellow-400 text-blue-900 font-bold py-2 px-6 rounded-lg hidden">
+                            Próximo Desafio
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="challenge-2" style="display: none;">
+            <h2 class="text-3xl font-bold mb-6 text-center text-yellow-300">Desafio 2: Arraste e Solte</h2>
+            <p class="mb-6 text-lg text-center">Arraste os itens para a coluna correta:</p>
+            
+            <div class="flex flex-col md:flex-row gap-6 mb-8">
+                <div class="flex-1">
+                    <div id="drag-items" class="grid grid-cols-1 gap-3">
+                        <div class="draggable bg-blue-800 p-4 rounded-lg text-lg font-semibold relative" draggable="true" data-correct="siluriano" data-explanation="Os peixes com mandíbula surgiram durante o Período Siluriano, representando uma importante evolução nos vertebrados aquáticos." data-id="item1">
+                            Primeiros peixes com mandíbula
+                            <div class="explanation-text">Os peixes com mandíbula surgiram durante o Período Siluriano, representando uma importante evolução nos vertebrados aquáticos.</div>
+                        </div>
+                        <div class="draggable bg-blue-800 p-4 rounded-lg text-lg font-semibold relative" draggable="true" data-correct="outro" data-explanation="Os dinossauros surgiram muito depois, no Período Triássico (há cerca de 230 milhões de anos), quase 200 milhões de anos após o Siluriano." data-id="item2">
+                            Primeiros dinossauros
+                            <div class="explanation-text">Os dinossauros surgiram muito depois, no Período Triássico (há cerca de 230 milhões de anos), quase 200 milhões de anos após o Siluriano.</div>
+                        </div>
+                        <div class="draggable bg-blue-800 p-4 rounded-lg text-lg font-semibold relative" draggable="true" data-correct="siluriano" data-explanation="As primeiras plantas terrestres simples (como musgos primitivos) começaram a colonizar a terra durante o Siluriano, um marco importante na evolução da vida terrestre." data-id="item3">
+                            Primeiras plantas terrestres
+                            <div class="explanation-text">As primeiras plantas terrestres simples (como musgos primitivos) começaram a colonizar a terra durante o Siluriano, um marco importante na evolução da vida terrestre.</div>
+                        </div>
+                        <div class="draggable bg-blue-800 p-4 rounded-lg text-lg font-semibold relative" draggable="true" data-correct="outro" data-explanation="A extinção dos dinossauros ocorreu no final do Período Cretáceo, há cerca de 66 milhões de anos, muito depois do Siluriano." data-id="item4">
+                            Extinção dos dinossauros
+                            <div class="explanation-text">A extinção dos dinossauros ocorreu no final do Período Cretáceo, há cerca de 66 milhões de anos, muito depois do Siluriano.</div>
+                        </div>
+                        <div class="draggable bg-blue-800 p-4 rounded-lg text-lg font-semibold relative" draggable="true" data-correct="siluriano" data-explanation="Os Eurypterids (escorpiões marinhos) eram predadores dominantes nos mares do Siluriano, alguns chegando a mais de 2 metros de comprimento." data-id="item5">
+                            Eurypterids dominavam os mares
+                            <div class="explanation-text">Os Eurypterids (escorpiões marinhos) eram predadores dominantes nos mares do Siluriano, alguns chegando a mais de 2 metros de comprimento.</div>
+                        </div>
+                        <div class="draggable bg-blue-800 p-4 rounded-lg text-lg font-semibold relative" draggable="true" data-correct="outro" data-explanation="Os primeiros mamíferos surgiram no final do Período Triássico, há cerca de 210 milhões de anos, muito depois do Siluriano." data-id="item6">
+                            Surgimento dos mamíferos
+                            <div class="explanation-text">Os primeiros mamíferos surgiram no final do Período Triássico, há cerca de 210 milhões de anos, muito depois do Siluriano.</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex-1 flex flex-col gap-6">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2 text-yellow-300">Período Siluriano</h3>
+                        <div id="siluriano-drop" class="dropzone bg-blue-900 rounded-lg p-4" data-zone="siluriano"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2 text-yellow-300">Outro Período</h3>
+                        <div id="outro-drop" class="dropzone bg-blue-900 rounded-lg p-4" data-zone="outro"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <p id="challenge-2-feedback" class="mb-4 text-lg hidden"></p>
+                <button id="next-to-challenge-3" class="bg-yellow-400 text-blue-900 font-bold py-2 px-6 rounded-lg hidden">
+                    Próximo Desafio
+                </button>
+            </div>
+            
+            <div id="feedback-popup" class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-900 border-2 border-yellow-300 rounded-lg p-5 z-50 shadow-lg hidden">
+                <h3 class="text-xl font-bold mb-3 text-yellow-300" id="popup-title"></h3>
+                <p id="popup-message" class="mb-4"></p>
+                <button id="popup-close" class="bg-yellow-400 text-blue-900 font-bold py-2 px-6 rounded-lg">
+                    Entendi!
+                </button>
+            </div>
+        </div>
+        
+        <div id="challenge-3" style="display: none;">
+            <h2 class="text-3xl font-bold mb-6 text-center text-yellow-300">Desafio 3: Reconstrua o Ambiente Siluriano</h2>
+            <p class="mb-6 text-lg text-center">Selecione 5 elementos que você acredita que faziam parte do ambiente Siluriano:</p>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                <div class="environment-option bg-blue-800 p-4 rounded-lg text-center cursor-pointer" data-correct="true">
+                    <div class="text-4xl mb-2">🐙</div>
+                    <p class="font-semibold">Cefalópodes</p>
+                </div>
+                <div class="environment-option bg-blue-800 p-4 rounded-lg text-center cursor-pointer" data-correct="false">
+                    <div class="text-4xl mb-2">🦖</div>
+                    <p class="font-semibold">Dinossauros</p>
+                </div>
+                <div class="environment-option bg-blue-800 p-4 rounded-lg text-center cursor-pointer" data-correct="true">
+                    <div class="text-4xl mb-2">🦂</div>
+                    <p class="font-semibold">Escorpiões Marinhos</p>
+                </div>
+                <div class="environment-option bg-blue-800 p-4 rounded-lg text-center cursor-pointer" data-correct="false">
+                    <div class="text-4xl mb-2">🌳</div>
+                    <p class="font-semibold">Árvores Altas</p>
+                </div>
+                <div class="environment-option bg-blue-800 p-4 rounded-lg text-center cursor-pointer" data-correct="true">
+                    <div class="text-4xl mb-2">🐚</div>
+                    <p class="font-semibold">Braquiópodes</p>
+                </div>
+                <div class="environment-option bg-blue-800 p-4 rounded-lg text-center cursor-pointer" data-correct="false">
+                    <div class="text-4xl mb-2">🦣</div>
+                    <p class="font-semibold">Mamutes</p>
+                </div>
+                <div class="environment-option bg-blue-800 p-4 rounded-lg text-center cursor-pointer" data-correct="true">
+                    <div class="text-4xl mb-2">🌱</div>
+                    <p class="font-semibold">Plantas Primitivas</p>
+                </div>
+                <div class="environment-option bg-blue-800 p-4 rounded-lg text-center cursor-pointer" data-correct="false">
+                    <div class="text-4xl mb-2">🦅</div>
+                    <p class="font-semibold">Aves</p>
+                </div>
+                <div class="environment-option bg-blue-800 p-4 rounded-lg text-center cursor-pointer" data-correct="true">
+                    <div class="text-4xl mb-2">🐟</div>
+                    <p class="font-semibold">Peixes Primitivos</p>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <!-- Feedback sem contagem de corretos -->
+                <p id="challenge-3-feedback" class="mb-4 text-lg hidden"></p>
+                <button id="show-results" class="bg-yellow-400 text-blue-900 font-bold py-2 px-6 rounded-lg hidden">
+                    Ver Resultados
+                </button>
+            </div>
+        </div>
+        
+        <div id="results-screen" style="display: none;">
+            <h2 class="text-3xl font-bold mb-6 text-center text-yellow-300">Parabéns, Sesiano!</h2>
+            <p class="mb-6 text-lg text-center">Você completou todos os desafios da Aventura Siluriana!</p>
+            
+            <div class="holographic-ticket mb-8">
+                <div class="ticket-pattern"></div>
+                <div class="holographic-effect"></div>
+                <div class="ticket-content p-4">
+                    <div class="ticket-badge">
+                        <span id="score-percentage">0%</span>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4 text-yellow-300">Certificado de Explorador Siluriano</h3>
+                    <p class="mb-2">Este certificado é concedido ao:</p>
+                    <p class="text-xl font-bold mb-4">Melhor Sesiano</p>
+                    <p class="mb-4">Por completar com sucesso a jornada pelo Período Siluriano e demonstrar conhecimento sobre esta importante era da história da Terra após apresentação do tema pela 1002.</p>
+                    
+                    <div class="brigadeiro-section">
+                        <h4 class="text-xl font-bold text-yellow-300 text-center mb-2">VALE BRIGADEIRO</h4>
+                        <div class="flex items-center justify-center mb-2">
+                            <span class="brigadeiro-icon">🍫</span>
+                            <span>Resgate seu brigadeiro mostrando este certificado validado!</span>
+                        </div>
+                        <p class="text-sm text-center mb-2">Para resgatar, mostre este certificado com o status "VALIDADO" para o responsável.</p>
+                        <div id="brigadeiro-status" class="brigadeiro-status">
+                            AGUARDANDO VALIDAÇÃO
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mt-4">
+                        <div>
+                            <p class="text-sm">Data: <span id="current-date"></span></p>
+                        </div>
+                        <div>
+                            <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#FFDC00" stroke-width="2"/>
+                                <path d="M30,50 L45,65 L70,35" stroke="#FFDC00" stroke-width="3" fill="none"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <h3 class="text-xl font-bold mb-4 text-yellow-300">Seu Desempenho:</h3>
+                <div class="bg-blue-900 rounded-lg p-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span>Desafio 1: Quiz</span>
+                        <span id="challenge-1-score">0/3</span>
+                    </div>
+                    <div class="w-full bg-blue-800 rounded-full h-2.5 mb-4">
+                        <div id="challenge-1-progress" class="bg-yellow-400 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-2">
+                        <span>Desafio 2: Arraste e Solte</span>
+                        <span id="challenge-2-score">0/6</span>
+                    </div>
+                    <div class="w-full bg-blue-800 rounded-full h-2.5 mb-4">
+                        <div id="challenge-2-progress" class="bg-yellow-400 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-2">
+                        <span>Desafio 3: Ambiente Siluriano</span>
+                        <span id="challenge-3-score">0/5</span>
+                    </div>
+                    <div class="w-full bg-blue-800 rounded-full h-2.5 mb-4">
+                        <div id="challenge-3-progress" class="bg-yellow-400 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center mb-2 font-bold">
+                        <span>Pontuação Total</span>
+                        <span id="total-score">0/14</span>
+                    </div>
+                    <div class="w-full bg-blue-800 rounded-full h-4">
+                        <div id="total-progress" class="bg-yellow-400 h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <h3 class="text-xl font-bold mb-4 text-yellow-300">Valide seu Certificado:</h3>
+                <div class="swipe-container">
+                    <div class="swipe-track">ARRASTE PARA VALIDAR SEU CERTIFICADO →</div>
+                    <div class="swipe-button">→</div>
+                    <!-- O texto de validação foi movido para abaixo do botão, fora da faixa de arraste -->
+                    <div class="swipe-complete">CERTIFICADO VALIDADO! ✓</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Game state
+            const gameState = {
+                challenge1Score: 0,
+                challenge1CurrentQuestion: 1,
+                challenge2Score: 0,
+                challenge3Score: 0,
+                challenge3Selected: 0,
+                totalItems: {
+                    challenge1: 3,
+                    challenge2: 6,
+                    challenge3: 5
+                },
+                draggedItems: new Set(),
+                certificateValidated: false
+            };
+            
+            // Screen elements
+            const introScreen = document.getElementById('intro-screen');
+            const challenge1 = document.getElementById('challenge-1');
+            const challenge2 = document.getElementById('challenge-2');
+            const challenge3 = document.getElementById('challenge-3');
+            const resultsScreen = document.getElementById('results-screen');
+            
+            // Navigation buttons
+            const startAdventureBtn = document.getElementById('start-adventure');
+            const nextToChallenge2Btn = document.getElementById('next-to-challenge-2');
+            const nextToChallenge3Btn = document.getElementById('next-to-challenge-3');
+            const showResultsBtn = document.getElementById('show-results');
+            
+            // Start button
+            if (startAdventureBtn) {
+                startAdventureBtn.addEventListener('click', function() {
+                    introScreen.style.display = 'none';
+                    challenge1.style.display = 'block';
+                });
+            }
+            
+            // Challenge 1: Sequential Quiz
+            function setupQuizQuestion(questionNumber) {
+                const questionDiv = document.getElementById(`question-${questionNumber}`);
+                if (!questionDiv) return;
+                
+                const options = questionDiv.querySelectorAll('.quiz-option');
+                const nextButton = questionDiv.querySelector('.next-question');
+                const explanationDiv = questionDiv.querySelector('.quiz-explanation');
+                let answered = false; // Variável para garantir única resposta
+                
+                options.forEach(option => {
+                    option.addEventListener('click', function() {
+                        if (answered) return; // Impede nova seleção se já respondido
+                        answered = true;
+                        
+                        // Remove classe selected dos demais e desabilita alterações
+                        options.forEach(opt => opt.classList.add('disabled'));
+                        this.classList.add('selected');
+                        
+                        // Verifica se está correto
+                        const isCorrect = this.getAttribute('data-correct') === 'true';
+                        const explanation = this.getAttribute('data-explanation');
+                        
+                        if (isCorrect) {
+                            this.classList.add('correct');
+                            gameState.challenge1Score++;
+                            
+                            if (explanationDiv) {
+                                explanationDiv.textContent = explanation;
+                                explanationDiv.className = 'quiz-explanation correct';
+                                explanationDiv.style.display = 'block';
+                            }
+                        } else {
+                            this.classList.add('incorrect');
+                            
+                            if (explanationDiv) {
+                                explanationDiv.textContent = explanation;
+                                explanationDiv.className = 'quiz-explanation incorrect';
+                                explanationDiv.style.display = 'block';
+                            }
+                            
+                            // Destaca a resposta correta
+                            options.forEach(opt => {
+                                if (opt.getAttribute('data-correct') === 'true') {
+                                    opt.classList.add('correct');
+                                }
+                            });
+                        }
+                        
+                        // Exibe o botão para a próxima pergunta
+                        if (nextButton) {
+                            nextButton.classList.remove('hidden');
+                        }
+                        
+                        // Se última questão, mostra botão para próximo desafio
+                        if (questionNumber === gameState.totalItems.challenge1) {
+                            if (nextToChallenge2Btn) {
+                                nextToChallenge2Btn.classList.remove('hidden');
+                            }
+                        }
+                    });
+                });
+                
+                if (nextButton) {
+                    nextButton.addEventListener('click', function() {
+                        questionDiv.style.display = 'none';
+                        
+                        const nextQuestionDiv = document.getElementById(`question-${questionNumber + 1}`);
+                        if (nextQuestionDiv) {
+                            nextQuestionDiv.style.display = 'block';
+                            gameState.challenge1CurrentQuestion = questionNumber + 1;
+                        }
+                    });
+                }
+            }
+            
+            // Setup quiz questions
+            for (let i = 1; i <= gameState.totalItems.challenge1; i++) {
+                setupQuizQuestion(i);
+            }
+            
+            if (nextToChallenge2Btn) {
+                nextToChallenge2Btn.addEventListener('click', function() {
+                    challenge1.style.display = 'none';
+                    challenge2.style.display = 'block';
+                });
+            }
+            
+            // Challenge 2: Drag and Drop
+            const draggables = document.querySelectorAll('.draggable');
+            const dropzones = document.querySelectorAll('.dropzone');
+            const feedbackPopup = document.getElementById('feedback-popup');
+            const popupTitle = document.getElementById('popup-title');
+            const popupMessage = document.getElementById('popup-message');
+            const popupClose = document.getElementById('popup-close');
+            const challenge2Feedback = document.getElementById('challenge-2-feedback');
+            
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', function(e) {
+                    this.classList.add('opacity-50');
+                    e.dataTransfer.setData('text/plain', this.innerHTML);
+                    e.dataTransfer.setData('data-correct', this.getAttribute('data-correct'));
+                    e.dataTransfer.setData('data-explanation', this.getAttribute('data-explanation'));
+                    e.dataTransfer.setData('data-id', this.getAttribute('data-id'));
+                });
+                
+                draggable.addEventListener('dragend', function() {
+                    this.classList.remove('opacity-50');
+                });
+                
+                draggable.addEventListener('touchstart', function(e) {
+                    window.touchedElement = this;
+                });
+            });
+            
+            dropzones.forEach(dropzone => {
+                dropzone.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('highlight');
+                });
+                
+                dropzone.addEventListener('dragleave', function() {
+                    this.classList.remove('highlight');
+                });
+                
+                dropzone.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('highlight');
+                    
+                    const data = e.dataTransfer.getData('text/plain');
+                    const correctZone = e.dataTransfer.getData('data-correct');
+                    const explanation = e.dataTransfer.getData('data-explanation');
+                    const itemId = e.dataTransfer.getData('data-id');
+                    
+                    if (gameState.draggedItems.has(itemId)) return;
+                    gameState.draggedItems.add(itemId);
+                    
+                    const droppedItem = document.createElement('div');
+                    droppedItem.innerHTML = data;
+                    droppedItem.classList.add('bg-blue-800', 'p-4', 'rounded-lg', 'text-lg', 'font-semibold', 'mb-2', 'relative');
+                    droppedItem.setAttribute('data-id', itemId);
+                    
+                    const isCorrect = (this.getAttribute('data-zone') === correctZone);
+                    if (isCorrect) {
+                        droppedItem.classList.add('bg-green-700');
+                        gameState.challenge2Score++;
+                    } else {
+                        droppedItem.classList.add('bg-red-700');
+                    }
+                    
+                    const explanationEl = document.createElement('div');
+                    explanationEl.classList.add('explanation-text');
+                    explanationEl.textContent = explanation;
+                    droppedItem.appendChild(explanationEl);
+                    
+                    setTimeout(() => {
+                        explanationEl.classList.add('show');
+                    }, 500);
+                    
+                    this.appendChild(droppedItem);
+                    
+                    const originalItem = document.querySelector(`[data-id="${itemId}"]`);
+                    if (originalItem) {
+                        originalItem.remove();
+                    }
+                    
+                    if (feedbackPopup && popupTitle && popupMessage) {
+                        popupTitle.textContent = isCorrect ? "Correto!" : "Incorreto!";
+                        popupMessage.textContent = explanation;
+                        feedbackPopup.classList.remove('hidden');
+                    }
+                    
+                    if (gameState.draggedItems.size === gameState.totalItems.challenge2) {
+                        challenge2Feedback.textContent = `Você acertou ${gameState.challenge2Score} de ${gameState.totalItems.challenge2} itens!`;
+                        challenge2Feedback.classList.remove('hidden');
+                        nextToChallenge3Btn.classList.remove('hidden');
+                    }
+                });
+                
+                dropzone.addEventListener('touchend', function(e) {
+                    if (window.touchedElement) {
+                        const touchedEl = window.touchedElement;
+                        const correctZone = touchedEl.getAttribute('data-correct');
+                        const explanation = touchedEl.getAttribute('data-explanation');
+                        const itemId = touchedEl.getAttribute('data-id');
+                        
+                        if (gameState.draggedItems.has(itemId)) return;
+                        gameState.draggedItems.add(itemId);
+                        
+                        const droppedItem = document.createElement('div');
+                        droppedItem.innerHTML = touchedEl.innerHTML;
+                        droppedItem.classList.add('bg-blue-800', 'p-4', 'rounded-lg', 'text-lg', 'font-semibold', 'mb-2', 'relative');
+                        droppedItem.setAttribute('data-id', itemId);
+                        
+                        const isCorrect = (this.getAttribute('data-zone') === correctZone);
+                        if (isCorrect) {
+                            droppedItem.classList.add('bg-green-700');
+                            gameState.challenge2Score++;
+                        } else {
+                            droppedItem.classList.add('bg-red-700');
+                        }
+                        
+                        const explanationEl = document.createElement('div');
+                        explanationEl.classList.add('explanation-text');
+                        explanationEl.textContent = explanation;
+                        droppedItem.appendChild(explanationEl);
+                        
+                        setTimeout(() => {
+                            explanationEl.classList.add('show');
+                        }, 500);
+                        
+                        this.appendChild(droppedItem);
+                        touchedEl.remove();
+                        
+                        if (feedbackPopup && popupTitle && popupMessage) {
+                            popupTitle.textContent = isCorrect ? "Correto!" : "Incorreto!";
+                            popupMessage.textContent = explanation;
+                            feedbackPopup.classList.remove('hidden');
+                        }
+                        
+                        if (gameState.draggedItems.size === gameState.totalItems.challenge2) {
+                            challenge2Feedback.textContent = `Você acertou ${gameState.challenge2Score} de ${gameState.totalItems.challenge2} itens!`;
+                            challenge2Feedback.classList.remove('hidden');
+                            nextToChallenge3Btn.classList.remove('hidden');
+                        }
+                        window.touchedElement = null;
+                    }
+                });
+            });
+            
+            if (popupClose) {
+                popupClose.addEventListener('click', function() {
+                    if (feedbackPopup) {
+                        feedbackPopup.classList.add('hidden');
+                    }
+                });
+            }
+            
+            if (nextToChallenge3Btn) {
+                nextToChallenge3Btn.addEventListener('click', function() {
+                    challenge2.style.display = 'none';
+                    challenge3.style.display = 'block';
+                });
+            }
+            
+            // Challenge 3: Environment Selection (não contar corretos)
+            const environmentOptions = document.querySelectorAll('.environment-option');
+            const challenge3Feedback = document.getElementById('challenge-3-feedback');
+            const maxSelections = 5;
+            
+            environmentOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    if (this.classList.contains('selected')) {
+                        this.classList.remove('selected');
+                        gameState.challenge3Selected--;
+                        // Removemos a contagem de corretos neste desafio
+                        updateChallenge3Feedback();
+                        return;
+                    }
+                    
+                    if (gameState.challenge3Selected >= maxSelections) {
+                        alert(`Você já selecionou ${maxSelections} elementos! Desmarque algum para selecionar outro.`);
+                        return;
+                    }
+                    
+                    this.classList.add('selected');
+                    gameState.challenge3Selected++;
+                    updateChallenge3Feedback();
+                });
+            });
+            
+            function updateChallenge3Feedback() {
+                if (gameState.challenge3Selected > 0) {
+                    challenge3Feedback.textContent = `Você selecionou ${gameState.challenge3Selected} de ${maxSelections} elementos.`;
+                    challenge3Feedback.classList.remove('hidden');
+                    
+                    if (gameState.challenge3Selected === maxSelections) {
+                        showResultsBtn.classList.remove('hidden');
+                    } else {
+                        showResultsBtn.classList.add('hidden');
+                    }
+                } else {
+                    challenge3Feedback.classList.add('hidden');
+                    showResultsBtn.classList.add('hidden');
+                }
+            }
+            
+            if (showResultsBtn) {
+                showResultsBtn.addEventListener('click', function() {
+                    challenge3.style.display = 'none';
+                    resultsScreen.style.display = 'block';
+                    updateResults();
+                    launchConfetti();
+                });
+            }
+            
+            function launchConfetti() {
+                confetti({
+                    particleCount: 200,
+                    spread: 100,
+                    origin: { y: 0.6 }
+                });
+                
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 100,
+                        angle: 60,
+                        spread: 70,
+                        origin: { x: 0 }
+                    });
+                }, 500);
+                
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 100,
+                        angle: 120,
+                        spread: 70,
+                        origin: { x: 1 }
+                    });
+                }, 800);
+                
+                const end = Date.now() + 3000;
+                const interval = setInterval(function() {
+                    if (Date.now() > end) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    
+                    confetti({
+                        particleCount: 20,
+                        startVelocity: 30,
+                        spread: 360,
+                        ticks: 60,
+                        origin: {
+                            x: Math.random(),
+                            y: Math.random() - 0.2
+                        }
+                    });
+                }, 200);
+            }
+            
+            function updateResults() {
+                const currentDate = document.getElementById('current-date');
+                if (currentDate) {
+                    const date = new Date();
+                    currentDate.textContent = date.toLocaleDateString();
+                }
+                
+                const totalScore = gameState.challenge1Score + gameState.challenge2Score + gameState.challenge3Score;
+                const totalPossible = gameState.totalItems.challenge1 + gameState.totalItems.challenge2 + gameState.totalItems.challenge3;
+                const percentage = Math.round((totalScore / totalPossible) * 100);
+                
+                document.getElementById('challenge-1-score').textContent = `${gameState.challenge1Score}/${gameState.totalItems.challenge1}`;
+                document.getElementById('challenge-2-score').textContent = `${gameState.challenge2Score}/${gameState.totalItems.challenge2}`;
+                document.getElementById('challenge-3-score').textContent = `${gameState.challenge3Score}/${gameState.totalItems.challenge3}`;
+                document.getElementById('total-score').textContent = `${totalScore}/${totalPossible}`;
+                document.getElementById('score-percentage').textContent = `${percentage}%`;
+                
+                document.getElementById('challenge-1-progress').style.width = `${(gameState.challenge1Score / gameState.totalItems.challenge1) * 100}%`;
+                document.getElementById('challenge-2-progress').style.width = `${(gameState.challenge2Score / gameState.totalItems.challenge2) * 100}%`;
+                document.getElementById('challenge-3-progress').style.width = `${(gameState.challenge3Score / gameState.totalItems.challenge3) * 100}%`;
+                document.getElementById('total-progress').style.width = `${percentage}%`;
+                
+                setupSwipeToUnlock();
+            }
+            
+            function setupSwipeToUnlock() {
+                const swipeButton = document.querySelector('.swipe-button');
+                const swipeContainer = document.querySelector('.swipe-container');
+                const swipeComplete = document.querySelector('.swipe-complete');
+                const brigadeiroStatus = document.getElementById('brigadeiro-status');
+                
+                if (!swipeButton || !swipeContainer || !swipeComplete) return;
+                
+                let isDragging = false;
+                let startX = 0;
+                let currentX = 0;
+                const containerWidth = swipeContainer.offsetWidth;
+                const buttonWidth = swipeButton.offsetWidth;
+                const maxX = containerWidth - buttonWidth - 10; // margem
+                
+                swipeButton.addEventListener('mousedown', startDrag);
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', endDrag);
+                swipeButton.addEventListener('touchstart', startDrag);
+                document.addEventListener('touchmove', drag);
+                document.addEventListener('touchend', endDrag);
+                
+                function startDrag(e) {
+                    isDragging = true;
+                    startX = (e.type === 'mousedown') ? e.clientX : e.touches[0].clientX;
+                    currentX = swipeButton.offsetLeft;
+                    e.preventDefault();
+                }
+                
+                function drag(e) {
+                    if (!isDragging) return;
+                    
+                    const pageX = (e.type === 'mousemove') ? e.clientX : e.touches[0].clientX;
+                    const dragX = pageX - startX;
+                    let newX = currentX + dragX;
+                    
+                    newX = Math.max(5, Math.min(newX, maxX));
+                    swipeButton.style.left = newX + 'px';
+                    
+                    if (newX >= maxX * 0.9) {
+                        completeSwipe();
+                    }
+                    
+                    e.preventDefault();
+                }
+                
+                function endDrag() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    
+                    if (swipeButton.offsetLeft < maxX * 0.9) {
+                        swipeButton.style.transition = 'left 0.3s ease';
+                        swipeButton.style.left = '5px';
+                        setTimeout(() => {
+                            swipeButton.style.transition = '';
+                        }, 300);
+                    }
+                }
+                
+                function completeSwipe() {
+                    isDragging = false;
+                    swipeButton.style.left = maxX + 'px';
+                    swipeComplete.classList.add('active');
+                    gameState.certificateValidated = true;
+                    
+                    if (brigadeiroStatus) {
+                        brigadeiroStatus.textContent = "BRIGADEIRO RESGATADO! 🎉";
+                        brigadeiroStatus.classList.add('redeemed');
+                    }
+                    
+                    swipeButton.removeEventListener('mousedown', startDrag);
+                    swipeButton.removeEventListener('touchstart', startDrag);
+                    document.removeEventListener('mousemove', drag);
+                    document.removeEventListener('touchmove', drag);
+                    document.removeEventListener('mouseup', endDrag);
+                    document.removeEventListener('touchend', endDrag);
+                    
+                    const ticket = document.querySelector('.holographic-ticket');
+                    if (ticket) {
+                        ticket.style.transform = 'perspective(1000px) rotateY(10deg)';
+                        setTimeout(() => {
+                            ticket.style.transform = 'perspective(1000px) rotateY(-10deg)';
+                            setTimeout(() => {
+                                ticket.style.transform = 'perspective(1000px) rotateY(0)';
+                                confetti({
+                                    particleCount: 100,
+                                    spread: 70,
+                                    origin: { y: 0.6 }
+                                });
+                            }, 500);
+                        }, 500);
+                    }
+                }
+            }
+            
+            function initializeDragAndDrop() {
+                const draggables = document.querySelectorAll('.draggable');
+                
+                draggables.forEach(draggable => {
+                    draggable.addEventListener('dragstart', function(e) {
+                        this.classList.add('opacity-50');
+                        e.dataTransfer.setData('text/plain', this.innerHTML);
+                        e.dataTransfer.setData('data-correct', this.getAttribute('data-correct'));
+                        e.dataTransfer.setData('data-explanation', this.getAttribute('data-explanation'));
+                        e.dataTransfer.setData('data-id', this.getAttribute('data-id'));
+                    });
+                    
+                    draggable.addEventListener('dragend', function() {
+                        this.classList.remove('opacity-50');
+                    });
+                    
+                    draggable.addEventListener('touchstart', function(e) {
+                        window.touchedElement = this;
+                    });
+                });
+            }
+            
+            initializeDragAndDrop();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92ff20a321190c61',t:'MTc0NDU5MDk3MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
